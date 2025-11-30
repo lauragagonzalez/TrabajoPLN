@@ -1,0 +1,118 @@
+---
+title: "PRÁCTICA"
+author: "Grupo 6"
+date: "2025-11-30"
+output: pdf_document
+---
+Participantes del grupo 6:
+
+- Alba Santos Santiago: alba.santos@alumnos.upm.es
+
+- Alfredo Antonio Aleix Ayuga:
+
+- Mario de las Heras Calzada: 
+
+- Miguel Galan Galaterra:
+
+- Laura García Gonzalez:
+
+- Adrian Gomez del Valle:
+
+-  Rodrigo Nieto Rodriguez: 
+
+
+
+
+Importamos las librerias que se utilizarán durante el trabajo. 
+```{r}
+
+```
+AQUÍ EXPLICAR PARA QUE SE USA CADA LIBRERIA. 
+
+Lo primero que tuvimos que hacer fue una función para clasificar las palabras según los afijos.
+```{r}
+afijos <- function(palabra) {
+  palabra <- tolower(palabra)
+  if(grepl("algia$", palabra)) return("dolor")
+  if(grepl("^hipo|^hiper", palabra)) return("alteración")
+  if(grepl("itis$", palabra)) return("infección")
+  if(grepl("oma$", palabra)) return("cáncer")
+  return(NA) # si la palabra no coincide con ningún afijo
+}
+```
+Esta función covierte la palabra en minúsculas y comprueba si contiene alguno de los afijos médicos dados: las terminaciones en *-algia* se asocian con enfermedades relacionadas con el dolor, los prefijos *hipo-* o *hiper-* con alteraciones funcionales, las terminaciones en *-itis* con procesos infecciosos y las terminaciones en *-oma* con patologías de tipo canceroso.
+
+La función devuelve la categoría correspondiente de cada palabra o un valor nulo si no encuentra ninguna coincidencia.
+
+
+Luego, continuamos con una función que nos construyera los sintagmas nominales.
+```{r}
+sintagmas_nominales <- function(anotacion) {
+  n <- nrow(anotacion)
+  results <- data.frame()
+  for(i in 1:n) {
+    upos_i <- anotacion$upos[i]
+    # Solo procesamos si es NOUN o PROPN
+    if(!is.na(upos_i) && (upos_i == "NOUN" || upos_i == "PROPN")) {
+      izquierda <- i
+      while(izquierda > 1 &&
+            !is.na(anotacion$upos[izquierda-1]) &&
+            (anotacion$upos[izquierda-1] == "ADJ" ||
+             anotacion$upos[izquierda-1] == "NOUN" ||
+             anotacion$upos[izquierda-1] == "PROPN")) {
+        izquierda <- izquierda - 1
+      }
+      derecha <- i
+      while(derecha < n &&
+            !is.na(anotacion$upos[derecha+1]) &&
+            (anotacion$upos[derecha+1] == "ADJ" ||
+             anotacion$upos[derecha+1] == "NOUN" ||
+             anotacion$upos[derecha+1] == "PROPN")) {
+        derecha <- derecha + 1
+      }
+      
+      phrase_tokens <- anotacion$token[izquierda:derecha]
+      phrase_text <- paste(phrase_tokens, collapse = " ")
+      
+      results <- rbind(
+        results,
+        data.frame(
+          text = phrase_text,
+          head_id = i,
+          start = izquierda,
+          end = derecha,
+          stringsAsFactors = FALSE
+        )
+      )
+    }
+  }
+  rownames(results) <- NULL
+  return(results)
+}
+```
+Esta función construye frases nominales completas a partir de las antoaciónes lingüisticas generadas por el modelo de análisis **udpipe**. Recorre cada token del texto y, cuando identifica un sustantivo o nombre propio, se expande hacia la izquierda y hacia la derecha para incluir adjetivos u otros sustantivos o nombres propios que lo acompaña, formando así el sintagma completo. El objetivo de esta función es que, en vez de que se analizen solo palabras aisladas (que pierden significado), se analize frases nominales que capturan mejor los nombres de enfermedades en el contexto del artículo. 
+
+Un ejemplo de como funciona es el siguiente: si encuentra la palabra "enterocolitis" junto al adjetivo "neutropénica", la función devolverá el sintagma "enerocolitis neutropénica".
+
+
+Funcion que busca enfermedades: 
+```{r}
+
+```
+
+Lo opcional:
+```{r}
+
+```
+
+La funcion que analiza loa articulos del json:
+```{r}
+
+```
+
+La sentencia de prueba (usar solo 100 articulos aleatorios porque el archivo .json es muy largo):
+```{r}
+
+```
+
+Tareas realizadas por cada uno: YO AQUÍ DIVIDIRÍA A PARTES IGUALES EL GRUPO PARA QUE NO HAYA LIOS Y LISTO.
