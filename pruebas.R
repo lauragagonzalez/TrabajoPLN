@@ -2,6 +2,7 @@ library(jsonlite)
 library(udpipe)
 udmodel_es <- udpipe_load_model(file='spanish-ancora-ud-2.5-191206.udpipe')
 library(stringr)
+library(stringi)
 library(rvest)
 
 
@@ -61,6 +62,62 @@ sintagmas_nominales <- function(anotacion) {
 
 
 # Función que busca enfermedades
+
+
+
+
 # Opcional: Buscar definición en CUN
+buscar_enfermedad <- function(palabra) {
+  url <- paste0("https://www.cun.es/diccionario-medico/terminos/", palabra)
+  lines <- readLines(url)
+  
+  # Obtiene la definición
+  comienzo_inf <- grep("<section class=\"textImageComponent textImageComponent\">", lines)[1]+1
+  length_inf <- grep("^<h2>", lines[comienzo_inf+1:length(lines)])[1]-1
+  text <- lines[comienzo_inf:(comienzo_inf+length_inf)]
+  
+  # Elimina las líneas con cabeceras si tiene
+  cabeceras <- grep("<h2>", text)
+  if (length(cabeceras) != 0){
+    text <- text[-cabeceras]
+  }
+  
+  info <- paste(unlist(lapply(text, limpiarTexto)), collapse="\n")
+  traducirTexto(info)
+}
+
+# Función auxiliar que elimina las etiquetas de HTML
+limpiarTexto<-function(cadena){
+  res<-gsub("<[^<>]*>", "", cadena)
+  trimws(res)
+}
+
+# Función auxiliar que traduce las letras con tilde y la eñe
+traducirTexto <- function(cadena){
+  trad <- list(c("&aacute;", "á"),
+               c("&Aacute;", "Á"),
+               c("&eacute;", "e"),
+               c("&Eacute;", "É"),
+               c("&iacute;", "í"),
+               c("&Iacute;", "Í"),
+               c("&oacute;", "ó"),
+               c("&Oacute;", "Ó"),
+               c("&uacute;", "ú"),
+               c("&Uacute;", "Ú"),
+               c("&ntilde;", "ñ"),
+               c("&Ntilde;", "Ñ"),
+               c("&iquest;", "¿"),
+               c("&iexcl;", "¡"),
+               c("&laquo;", "«"),
+               c("&raquo;", "»"),
+               c("&ndash;", "-")
+  )
+  stri_replace_all_regex(cadena,
+                         pattern=unlist(lapply(trad, function(x){x[1]})),
+                         replacement=unlist(lapply(trad, function(x){x[2]})),
+                         vectorize=FALSE)
+}
+
+
 # Procesar JSON de artículos (usar solo 100 aleatorios porque el json es enorme)
 

@@ -102,8 +102,62 @@ Funcion que busca enfermedades:
 
 Lo opcional:
 ```{r}
+buscar_enfermedad <- function(palabra) {
+  url <- paste0("https://www.cun.es/diccionario-medico/terminos/", palabra)
+  lines <- readLines(url)
+  
+  # Obtiene la definición
+  comienzo_inf <- grep("<section class=\"textImageComponent textImageComponent\">", lines)[1]+1
+  length_inf <- grep("^<h2>", lines[comienzo_inf+1:length(lines)])[1]-1
+  text <- lines[comienzo_inf:(comienzo_inf+length_inf)]
+  
+  # Elimina las líneas con cabeceras si tiene
+  cabeceras <- grep("<h2>", text)
+  if (length(cabeceras) != 0){
+    text <- text[-cabeceras]
+  }
+  
+  info <- paste(unlist(lapply(text, limpiarTexto)), collapse="\n")
+  traducirTexto(info)
+}
 
+# Función auxiliar que elimina las etiquetas de HTML
+limpiarTexto<-function(cadena){
+  res<-gsub("<[^<>]*>", "", cadena)
+  trimws(res)
+}
+
+# Función auxiliar que traduce las letras con tilde y la eñe
+traducirTexto <- function(cadena){
+  trad <- list(c("&aacute;", "á"),
+               c("&Aacute;", "Á"),
+               c("&eacute;", "e"),
+               c("&Eacute;", "É"),
+               c("&iacute;", "í"),
+               c("&Iacute;", "Í"),
+               c("&oacute;", "ó"),
+               c("&Oacute;", "Ó"),
+               c("&uacute;", "ú"),
+               c("&Uacute;", "Ú"),
+               c("&ntilde;", "ñ"),
+               c("&Ntilde;", "Ñ"),
+               c("&iquest;", "¿"),
+               c("&iexcl;", "¡"),
+               c("&laquo;", "«"),
+               c("&raquo;", "»"),
+               c("&ndash;", "-")
+  )
+  stri_replace_all_regex(cadena,
+                         pattern=unlist(lapply(trad, function(x){x[1]})),
+                         replacement=unlist(lapply(trad, function(x){x[2]})),
+                         vectorize=FALSE)
+}
 ```
+Dada una enfermedad, esta función obtiene su definición de del diccionario médico de la Clínica Universidad de Navarra. Para ello, obtiene toda la información de la web de la CUN de la enfermedad buscada y filtra la información para quedarse solo con la definición que se devuelve en una cadena de texto. En caso de contener varios párrafos la definición, estos se separan mediante los carácteres "\\n". 
+
+Además, se han creado dos funciones auxiliares que limpian el texto y traducen algunos símbolos para que se pueda leer de manera correcta.   
+
+
 
 La funcion que analiza loa articulos del json:
 ```{r}
