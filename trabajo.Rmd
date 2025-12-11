@@ -8,7 +8,7 @@ Participantes del grupo 6:
 
 - Alba Santos Santiago: alba.santos@alumnos.upm.es
 
-- Alfredo Antonio Aleix Ayuga:
+- Alfredo Antonio Aleix Ayuga: alfredo.aleix@alumnos.upm.es
 
 - Mario de las Heras Calzada: 
 
@@ -97,8 +97,30 @@ Un ejemplo de como funciona es el siguiente: si encuentra la palabra "enterocoli
 
 Funcion que busca enfermedades: 
 ```{r}
-
+buscar_enfermedades <- function(anotacion) {
+  sintagmas <- sintagmas_nominales(anotacion)
+  
+  clasificar_sintagma <- function(frase) {
+    palabras <- strsplit(frase, "\\s+")[[1]]
+    clases <- sapply(palabras, afijos)
+    clases_validas <- clases[!is.na(clases)]
+    
+    if (length(clases_validas) == 0) {
+      return(NA)
+    }
+    clases_validas[1]
+  }
+  
+  sintagmas$categoria <- sapply(sintagmas$text, clasificar_sintagma)
+  
+  sintagmas[!is.na(sintagmas$categoria),
+            c("text", "categoria", "head_id", "start", "end")]
+}
 ```
+Esta función recibe como entrada la anotación lingüística generada por **udpipe**, construye los sintagmas nominales llamando a la función sintagmas_nominales. A continuación, para cada sintagma, separa sus palabras y aplica la función afijos a cada una de ellas.
+Si alguna palabra contiene un afijo médico de los definidos (-algia, hipo-, hiper-, -itis, -oma), el sintagma se clasifica según la primera categoría encontrada (dolor, alteración, infección o cáncer).
+Finalmente, la función devuelve únicamente los sintagmas que han podido ser clasificados como posibles enfermedades, junto con su categoría y la información de posición en el texto.
+
 
 Lo opcional:
 ```{r}
