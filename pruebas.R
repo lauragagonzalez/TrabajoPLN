@@ -120,4 +120,5 @@ traducirTexto <- function(cadena){
 
 
 # Procesar JSON de artículos (usar solo 100 aleatorios porque el json es enorme)
-
+resultados <- analizar_articulos("MESINESP_ORIGINAL_TRAINING.json", udmodel_es, n = 100)
+head(resultados, 5)
