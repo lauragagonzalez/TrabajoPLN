@@ -183,12 +183,32 @@ Además, se han creado dos funciones auxiliares que limpian el texto y traducen 
 
 La funcion que analiza loa articulos del json:
 ```{r}
-
+analizar_articulos <- function(json_file, modelo_udpipe, n = 100) {
+  lines <- readLines(json_file)
+  data_list <- lapply(lines, jsonlite::fromJSON)
+  data_df <- do.call(rbind, lapply(data_list, as.data.frame))
+  set.seed(123)
+  idx <- sample(nrow(data_df), min(n, nrow(data_df)))
+  seleccionados <- data_df[idx, ]
+  resultados <- vector("list", length = nrow(seleccionados))
+  for (i in seq_len(nrow(seleccionados))) {
+    texto <- seleccionados$abstractText[i]
+    anotacion <- udpipe_annotate(modelo_udpipe, x = texto)
+    anotacion <- as.data.frame(anotacion)
+    enfermedades <- buscar_enfermedades(anotacion)
+    if (!is.null(enfermedades) && nrow(enfermedades) > 0) {
+      enfermedades$id_articulo <- seleccionados$id[i]
+    }
+    resultados[[i]] <- enfermedades
+  }
+  resultados_df <- do.call(rbind, resultados)
+  return(resultados_df)
+}
 ```
 
 La sentencia de prueba (usar solo 100 articulos aleatorios porque el archivo .json es muy largo):
 ```{r}
-
+resultados <- analizar_articulos("MESINESP_ORIGINAL_TRAINING.json", udmodel_es, n = 100)
 ```
 
 Tareas realizadas por cada uno: YO AQUÍ DIVIDIRÍA A PARTES IGUALES EL GRUPO PARA QUE NO HAYA LIOS Y LISTO.
